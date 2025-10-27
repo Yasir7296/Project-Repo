@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/<your-username>/ci-cd-devops-project.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t nodeapp:latest .'
+                }
+            }
+        }
+
+        stage('Stop Old Container') {
+            steps {
+                script {
+                    sh 'docker stop nodeapp || true'
+                    sh 'docker rm nodeapp || true'
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                script {
+                    sh 'docker run -d -p 3000:3000 --name nodeapp nodeapp:latest'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Deployment Successful!'
+        }
+        failure {
+            echo '❌ Deployment Failed!'
+        }
+    }
+}

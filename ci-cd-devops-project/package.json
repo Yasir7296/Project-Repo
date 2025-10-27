@@ -1,0 +1,11 @@
+{
+  "name": "ci-cd-devops-project",
+  "version": "1.0.0",
+  "description": "A simple Node.js app deployed via Jenkins CI/CD pipeline",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Yasir Abbas",
+  "license": "MIT"
+}
