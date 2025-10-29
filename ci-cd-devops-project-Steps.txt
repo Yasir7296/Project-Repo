@@ -1,0 +1,122 @@
+🚀 End-to-End CI/CD Pipeline for Node.js Application using Jenkins and Docker on AWS EC2
+
+🧩 STEP 1: Environment Ready Karna (EC2 Machine Par)
+
+⚙️ Ports Allow Karo (EC2 Security Group me):
+22     # SSH connection ke liye
+8080   # Jenkins ke liye
+3000   # Node.js application ke liye
+
+
+1.1 System Update aur Docker Install
+sudo apt update -y               # System packages list update karne ke liye
+sudo apt upgrade -y              # Purane packages ko latest version me upgrade karne ke liye
+sudo apt install docker.io -y    # Docker engine install karne ke liye
+sudo systemctl start docker      # Docker service start karne ke liye
+sudo systemctl enable docker     # Docker ko boot time par automatically start karne ke liye
+
+
+Docker Volume Create Karna (Jenkins data ke liye)
+sudo docker volume create jenkins_home   # Jenkins ka persistent storage volume create karta hai
+sudo docker volume ls                    # Verify karne ke liye ke volume create ho gaya hai
+
+
+Ubuntu user ko Docker commands use karne ki permission dena 
+sudo usermod -aG docker $USER    # Current user ko docker group me add karta hai (sudo ke bina docker run karne ke liye)
+# ⚠️ Iske baad instance ko reconnect ya restart zaroor karo
+
+
+
+🧩 STEP 2: Jenkins Setup (Docker Container ke andar)
+
+2.1 Jenkins Container Run Karo (Docker socket ke sath)    ( # Jenkins data persist karne ke liye )
+							  ( # Jenkins ko Docker control dene ke liye)
+							  ( # Docker CLI ko Jenkins container me available karne ke liye)
+							  ( # Jenkins LTS (Long Term Support) image use karne ke liye)
+sudo docker run -d \
+  --name jenkins \
+  -p 8080:8080 -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /usr/bin/docker:/usr/bin/docker \
+  jenkins/jenkins:lts
+                            
+
+
+2.2 Jenkins Admin Password Dekho
+sudo docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword   # Jenkins setup ke waqt password lene ke liye
+
+
+Browser me open karo →
+http://<EC2-PUBLIC-IP>:8080
+Password paste karo → plugins install hone do → admin user create karo ✅
+
+
+🧩 STEP 3: Jenkins Container me Docker CLI Configure Karna
+sudo docker exec -u root -it jenkins bash   # Jenkins container me root user ke sath enter karne ke liye
+
+apt update                                 # Container ke andar package list update karne ke liye
+apt install -y docker.io                   # Docker CLI install karne ke liye (taake Jenkins Docker commands chala sake)
+
+groupadd -f docker                         # Docker group create karne ke liye (agar already nahi hai)
+usermod -aG docker jenkins                 # Jenkins user ko docker group me add karne ke liye
+exit                                       # Container se bahar nikalne ke liye
+
+sudo chmod 666 /var/run/docker.sock         # Docker socket ko Jenkins ke access ke liye permission dene ke liye
+sudo docker restart jenkins                 # Jenkins container ko restart karne ke liye
+
+sudo docker exec -it jenkins bash           # Jenkins container me wapas enter karne ke liye
+docker ps                                  # Verify karne ke liye ke Jenkins Docker commands chala sakta hai
+
+
+🧩 STEP 4: GitHub Repository Setup
+GitHub par ek repo banao → Project-Repo
+
+Project structure ye rakho 👇
+
+ci-cd-devops-project/
+  ├── index.js
+  ├── package.json
+  ├── Dockerfile
+  └── Jenkinsfile
+
+
+🧩 STEP 5: Jenkins Pipeline Job Create Karna
+
+1️ Jenkins dashboard → New Item click karo
+2️ Name: ci-cd-pipeline
+3️ Type: Pipeline → OK
+
+Pipeline section me:
+
+Definition: Pipeline script from SCM
+SCM: Git
+Repository URL: https://github.com/Yasir7296/Project-Repo.git
+Branch: */main
+Script Path: ci-cd-devops-project/Jenkinsfile
+
+Save & Apply
+
+
+🧩 STEP 6: Build & Verification
+# Jenkins dashboard par “Build Now” click karo
+# Agar sab sahi hua to status: ✅ SUCCESS
+
+
+Docker Container Verify Karna
+sudo docker ps   # Check karne ke liye ke Node.js app container run ho raha hai
+
+Expected output:
+CONTAINER ID   IMAGE      PORTS                     NAMES
+abc1234        nodeapp    0.0.0.0:3000->3000/tcp    nodeapp
+
+
+
+
+🧩 STEP 7: Browser Me Application Check Karo
+
+http://<EC2-PUBLIC-IP>:3000
+
+Output:
+
+🚀 Node.js App Deployed via Jenkins & Docker!
